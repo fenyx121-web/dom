@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Дом в 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+/* Тёмная витрина: картинки главные, интерфейс тихий; акцент — латунь из интерьера дома */
+:root {
+  --bg: #f4f2ee; --panel: #ffffff; --ink: #1c1a17; --muted: #6e675d; --line: #dcd6cb; --accent: #8a6a2f; --accent-ink: #ffffff;
+  --f-ui: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #131211; --panel: #1b1917; --ink: #f1ebe2; --muted: #a79d8e; --line: #2d2a26; --accent: #c9a96e; --accent-ink: #1c1812; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #131211; --panel: #1b1917; --ink: #f1ebe2; --muted: #a79d8e; --line: #2d2a26; --accent: #c9a96e; --accent-ink: #1c1812; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-ui); }
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 56px; display: grid; gap: 40px; }
+h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; font-weight: 800; letter-spacing: -.02em; text-wrap: balance; }
+h2 { margin: 0 0 14px; font-size: 1.2rem; font-weight: 800; }
+p { margin: 0; color: var(--muted); max-width: 62ch; }
+header { display: grid; gap: 14px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.card { display: grid; gap: 10px; align-content: start; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; color: inherit; text-decoration: none; }
+.card strong { font-size: 1.15rem; }
+.card span { color: var(--muted); font-size: .95rem; }
+.card em { font-style: normal; font-weight: 700; color: var(--accent); }
+.card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.gallery a { display: block; position: relative; border-radius: 10px; overflow: hidden; background: var(--panel); }
+.gallery img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.gallery figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 12px 8px; font-size: .85rem; color: #f5efe6; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+.gallery figure { margin: 0; }
+footer { color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Дом в 3D</h1>
+    <p>Двухэтажный дом с гаражом, баней и участком: можно пройтись по комнатам, посмотреть панорамы 360° и фотореалистичные виды.</p>
+  </header>
+
+  <section class="cards" aria-label="Разделы">
+    <a class="card" href="model/">
+      <strong>3D-модель</strong>
+      <span>Весь дом и участок. Режим «Прогулка внутри»: ходите по комнатам, двери открываются сами. Переключайте отделку пола, стен и потолка.</span>
+      <em>Открыть модель →</em>
+    </a>
+    <a class="card" href="tour/">
+      <strong>Прогулка 360°</strong>
+      <span>Восемь панорам: прихожая, холл с лестницей, кухня, гостиная, ванная, кабинет, лестница на втором этаже и большая спальня.</span>
+      <em>Начать прогулку →</em>
+    </a>
+  </section>
+
+  <section aria-labelledby="g">
+    <h2 id="g">Виды комнат</h2>
+    <div class="gallery">
+      <a href="renders/01.jpg"><figure><img src="renders/01.jpg" alt="Ванная комната, угловая ванна" loading="lazy"><figcaption>Ванная</figcaption></figure></a>
+      <a href="renders/02.jpg"><figure><img src="renders/02.jpg" alt="Ванная: подвесной унитаз за деревянной панелью" loading="lazy"><figcaption>Ванная, санузел</figcaption></figure></a>
+      <a href="renders/03.jpg"><figure><img src="renders/03.jpg" alt="Холл и лестница на первом этаже" loading="lazy"><figcaption>Холл и лестница</figcaption></figure></a>
+      <a href="renders/04.jpg"><figure><img src="renders/04.jpg" alt="Лестничный пролёт второго этажа с люстрой" loading="lazy"><figcaption>Лестница, второй этаж</figcaption></figure></a>
+      <a href="renders/05.jpg"><figure><img src="renders/05.jpg" alt="Кабинет: стол с двумя мониторами" loading="lazy"><figcaption>Кабинет</figcaption></figure></a>
+      <a href="renders/06.jpg"><figure><img src="renders/06.jpg" alt="Кабинет: диван и книжный стеллаж" loading="lazy"><figcaption>Кабинет, диван и стеллаж</figcaption></figure></a>
+      <a href="renders/07.jpg"><figure><img src="renders/07.jpg" alt="Кухня" loading="lazy"><figcaption>Кухня</figcaption></figure></a>
+      <a href="renders/08.jpg"><figure><img src="renders/08.jpg" alt="Зона телевизора в гостиной" loading="lazy"><figcaption>ТВ-зона</figcaption></figure></a>
+      <a href="renders/09.jpg"><figure><img src="renders/09.jpg" alt="Угловой диван у окна" loading="lazy"><figcaption>Диван у окна</figcaption></figure></a>
+      <a href="renders/10.jpg"><figure><img src="renders/10.jpg" alt="Гостиная" loading="lazy"><figcaption>Гостиная</figcaption></figure></a>
+      <a href="renders/11.jpg"><figure><img src="renders/11.jpg" alt="Большая спальня с аркой и подсветкой" loading="lazy"><figcaption>Большая спальня</figcaption></figure></a>
+    </div>
+  </section>
+
+  <footer>Картинки посчитаны в Blender (Cycles) на видеокарте RTX 4090. Модель и панорамы работают в браузере, вход не нужен.</footer>
+</main>
+</body>
+</html>
