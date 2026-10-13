@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Умный щит</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+/* Та же тихая витрина, что на главной: латунный акцент, зелёный — «под напряжением», серый — «отключено» */
+:root {
+  --bg: #f4f2ee; --panel: #ffffff; --ink: #1c1a17; --muted: #6e675d; --line: #dcd6cb; --accent: #8a6a2f; --accent-ink: #ffffff;
+  --on: #2f7d4f; --on-bg: #e3f1e8; --off: #9a948a; --off-bg: #ece9e3; --auto: #a26a12; --auto-bg: #f7ead2; --keep: #3d5f8f; --keep-bg: #e2e9f4;
+  --f-ui: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #131211; --panel: #1b1917; --ink: #f1ebe2; --muted: #a79d8e; --line: #2d2a26; --accent: #c9a96e; --accent-ink: #1c1812;
+    --on: #6fcf97; --on-bg: #1d3326; --off: #7d766c; --off-bg: #24221f; --auto: #e0b060; --auto-bg: #3a2e18; --keep: #8fb0e0; --keep-bg: #1f2a3a; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #131211; --panel: #1b1917; --ink: #f1ebe2; --muted: #a79d8e; --line: #2d2a26; --accent: #c9a96e; --accent-ink: #1c1812;
+  --on: #6fcf97; --on-bg: #1d3326; --off: #7d766c; --off-bg: #24221f; --auto: #e0b060; --auto-bg: #3a2e18; --keep: #8fb0e0; --keep-bg: #1f2a3a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--f-ui); }
+main > * { min-width: 0; }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 16px 56px; display: grid; gap: 44px; }
+a { color: var(--accent); }
+h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.05; font-weight: 800; letter-spacing: -.02em; text-wrap: balance; }
+h2 { margin: 0 0 12px; font-size: 1.35rem; font-weight: 800; }
+h3 { margin: 0 0 6px; font-size: 1.05rem; font-weight: 800; }
+p { margin: 0; color: var(--muted); max-width: 70ch; }
+p + p { margin-top: 10px; }
+header { display: grid; gap: 14px; }
+.back { font-size: .9rem; text-decoration: none; }
+.lead { font-size: 1.08rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.card { padding: 18px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.card p { font-size: .95rem; }
+.card ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: .95rem; }
+.card li + li { margin-top: 4px; }
+.card.pick { border-color: var(--accent); }
+.tag { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+
+/* сценарии */
+.scen { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.scen button { font: inherit; font-size: .95rem; font-weight: 600; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.scen button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.scen button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#scenText { min-height: 3.2em; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .85rem; color: var(--muted); margin: 12px 0; }
+.legend span::before { content: ""; display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.plan { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.plan svg { display: block; width: 100%; height: auto; }
+.plan .cap { font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.room rect { stroke: var(--ink); stroke-width: 2.5; fill: var(--panel); transition: fill .25s; }
+.room.dim rect { fill: var(--off-bg); }
+.room text { fill: var(--ink); font: 700 12px var(--f-ui); }
+.room text.sub { font-weight: 400; font-size: 10.5px; fill: var(--muted); }
+.pill rect { stroke: none; transition: fill .25s; }
+.pill text { font: 800 10px var(--f-ui); }
+.outs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; margin-top: 14px; }
+.out { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; transition: background .25s; }
+.out.dim { background: var(--off-bg); }
+.out b { display: block; margin-bottom: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: .76rem; font-weight: 700; border-radius: 6px; padding: 2px 8px; background: var(--b); color: var(--c); }
+.s-on { --c: var(--on); --b: var(--on-bg); }
+.s-off { --c: var(--off); --b: var(--off-bg); }
+.s-auto { --c: var(--auto); --b: var(--auto-bg); }
+.s-keep { --c: var(--keep); --b: var(--keep-bg); }
+
+/* таблица групп */
+.tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: .9rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 800; position: sticky; top: 0; background: var(--panel); }
+tr.sec td { font-weight: 800; color: var(--accent); background: var(--bg); font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; }
+td.id { font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.m { color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+.note { font-size: .85rem; margin-top: 10px; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; }
+ol.steps li { counter-increment: s; position: relative; padding: 16px 18px 16px 62px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+ol.steps li::before { content: counter(s); position: absolute; left: 18px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 800; display: grid; place-items: center; }
+.warn { border-left: 4px solid var(--auto); background: var(--auto-bg); border-radius: 10px; padding: 14px 16px; }
+.warn p { color: var(--ink); }
+footer { color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="back" href="../">← Дом в 3D</a>
+    <h1>Умный щит: свет и розетки</h1>
+    <p class="lead">Первый шаг умного дома — щит, который сам отключает освещение и розетки по сценарию: «Уходя», «Ночь», «Отпуск». Ниже — разбивка на группы по комнатам из 3D-модели, что можно отключать и что нельзя, и как это собрать.</p>
+  </header>
+
+  <section aria-labelledby="h-idea">
+    <h2 id="h-idea">Главное решение: защита отдельно, управление отдельно</h2>
+    <div class="cards">
+      <div class="card">
+        <span class="tag">Не рекомендую</span>
+        <h3>«Умный автомат» вместо обычного</h3>
+        <p>Китайские Wi‑Fi/Zigbee-автоматы с моторчиком совмещают защиту и управление в одном корпусе. Защита у них часто электронная и без нормальной сертификации, а если модуль зависнет, в щите остаётся сомнительный автомат.</p>
+      </div>
+      <div class="card pick">
+        <span class="tag">Рекомендую</span>
+        <h3>Обычный автомат + умное реле</h3>
+        <p>Защищают проверенные автоматы и УЗО/дифавтоматы (ABB, Schneider, Hager, IEK и т. п.). Сразу за ними на DIN-рейке стоит модуль реле, который включает и выключает группу по команде.</p>
+        <ul>
+          <li>Сломается умная часть — защита продолжит работать.</li>
+          <li>Мощные линии (плита, духовка, баня) — через модульный контактор, которым командует реле.</li>
+          <li>Реле с замером мощности показывает, что сколько потребляет.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">Условие</span>
+        <h3>Отключить можно только отдельную линию</h3>
+        <p>Щит не выключит розетки в детской, если они на одном кабеле с коридором. Поэтому важнее всего проводка «звездой»: каждая комната (а свет и розетки — отдельно) идёт в щит своим кабелем. Если проводку ещё не делали — заложите это сейчас, это почти ничего не стоит.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-plan">
+    <h2 id="h-plan">Что выключается в каждом сценарии</h2>
+    <p>Нажмите на сценарий: план покажет, какие группы остаются под напряжением. Комнаты и размеры взяты из 3D-модели.</p>
+    <div class="scen" role="group" aria-label="Сценарий">
+      <button type="button" data-s="home" aria-pressed="true">Дома</button>
+      <button type="button" data-s="night" aria-pressed="false">Ночь</button>
+      <button type="button" data-s="away" aria-pressed="false">Уходя</button>
+      <button type="button" data-s="vacation" aria-pressed="false">Отпуск</button>
+    </div>
+    <p id="scenText" aria-live="polite"></p>
+    <div class="legend">
+      <span style="--c: var(--on)">включено</span>
+      <span style="--c: var(--off)">отключено</span>
+      <span style="--c: var(--auto)">по условию (таймер, датчик, конец цикла)</span>
+      <span style="--c: var(--keep)">не отключается никогда</span>
+    </div>
+    <div class="plans">
+      <div class="plan"><div class="cap">1 этаж</div><svg id="f1" viewBox="-10 -10 365 290" role="img" aria-label="План первого этажа с группами"></svg></div>
+      <div class="plan"><div class="cap">2 этаж</div><svg id="f2" viewBox="-10 -10 365 290" role="img" aria-label="План второго этажа с группами"></svg></div>
+    </div>
+    <div class="outs" id="outs"></div>
+  </section>
+
+  <section aria-labelledby="h-groups">
+    <h2 id="h-groups">Группы щита</h2>
+    <p>Ориентир — ввод 15 кВт, три фазы (типично для ИЖС). Номиналы — по ПУЭ и СП 256.1325800: свет — кабель 3×1,5 и автомат 10 А, розетки — 3×2,5 и 16 А с УЗО 30 мА, ванная — УЗО 10 мА. Итоговый проект и подбор номиналов должен сделать электрик.</p>
+    <div class="tablewrap" style="margin-top:14px">
+      <table>
+        <thead><tr><th>№</th><th>Группа</th><th>Защита</th><th>Кабель</th><th>Как управляется</th><th>Уходя</th><th>Ночь</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note">Итого управляемых каналов: <b id="nCtl"></b>. Из них через контактор: <b id="nCont"></b>. Неотключаемых групп: <b id="nKeep"></b>.</p>
+  </section>
+
+  <section aria-labelledby="h-hw">
+    <h2 id="h-hw">На чём собрать</h2>
+    <div class="cards">
+      <div class="card pick">
+        <span class="tag">Надёжно, проводное</span>
+        <h3>Контроллер в щите + модули реле</h3>
+        <p>Например, Wiren Board (российский, продаётся без проблем): контроллер на DIN-рейке и модули реле на 6 каналов по шине RS-485. Работает без интернета, всё в одном щите, умеет интеграцию с Алисой и Home Assistant.</p>
+        <ul>
+          <li>Нужно: контроллер, 4–5 модулей реле, 4–5 контакторов, щит на 5–6 рядов.</li>
+          <li>Бонус: настенные выключатели можно сделать кнопками, подключёнными к щиту, — тогда любая кнопка может стать «мастер-выключателем».</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">Проще и дешевле</span>
+        <h3>Беспроводные DIN-реле + хаб</h3>
+        <p>DIN-реле на Zigbee или Wi‑Fi (Shelly Pro, Sonoff, модули Tuya) и хаб: Яндекс Станция/хаб с Алисой или Home Assistant на мини-ПК.</p>
+        <ul>
+          <li>Металлический щит глушит радио — нужен пластиковый щит или выносная антенна.</li>
+          <li>Только облако Tuya/Алисы: без интернета сценарии могут не сработать. Home Assistant работает локально.</li>
+          <li>Берите реле с замером мощности — он нужен для сценария со стиральной и посудомоечной машиной.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">Кнопка у двери</span>
+        <h3>«Мастер-выключатель» в прихожей</h3>
+        <p>Одна кнопка у входа запускает «Уходя», долгое нажатие — «Отпуск». Дублируется в телефоне, голосом («Алиса, я ухожу») и автоматически, когда охрана поставлена на сигнализацию.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rules">
+    <h2 id="h-rules">Правила, которые нельзя нарушать</h2>
+    <div class="cards">
+      <div class="card"><h3>Котёл, холодильник и связь — никогда</h3><p>Котельная под лестницей, холодильник, роутер с хабом и камеры, привод ворот гаража и калитки — на отдельных автоматах без реле. Сценарий не должен случайно разморозить дом или запереть вас снаружи.</p></div>
+      <div class="card"><h3>Стиралка и посудомойка — после цикла</h3><p>Не обрывать программу: щит ждёт, пока потребление упадёт до нуля на пару минут, и только тогда отключает линию. Заодно меньше риск протечки, пока никого нет.</p></div>
+      <div class="card"><h3>Без умной части дом должен работать</h3><p>Если контроллер или Wi‑Fi сломались, реле возвращается в «включено», а свет работает от обычных выключателей. Выбирайте реле, которые после пропадания питания включаются, а не остаются выключенными.</p></div>
+      <div class="card"><h3>Ночью свет на лестнице не гасить полностью</h3><p>В сценарии «Ночь» холл и лестница уходят в режим ночника с датчиком движения — спускаться в темноте по П-образной лестнице опасно.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-steps">
+    <h2 id="h-steps">План по этапам</h2>
+    <ol class="steps">
+      <li><h3>Проект щита и проводки</h3><p>Электрик рисует однолинейную схему по таблице выше, раскладывает группы по фазам, подбирает щит с запасом 20–30 % по модулям. Если стены уже отделаны — сначала проверить, какие линии реально разделены (снять крышку щита и прозвонить).</p></li>
+      <li><h3>Щит с реле и «мастер-выключатель»</h3><p>Монтаж автоматов, УЗО, реле и контакторов, кнопка у двери. Сценарии «Уходя» и «Ночь». Это и есть ваш первый шаг — уже полезно само по себе.</p></li>
+      <li><h3>Датчики</h3><p>Протечка воды в ванной, туалете, на кухне и в котельной с краном-отсекателем; дым; движение в холле и на улице; датчики открытия двери и ворот. Сценарии начинают запускаться сами.</p></li>
+      <li><h3>Комфорт</h3><p>Свет на улице по закату, имитация присутствия в отпуске, учёт электроэнергии по группам, управление котлом по комнатным датчикам температуры, баня с прогревом по расписанию.</p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-q">
+    <h2 id="h-q">Что уточнить, чтобы довести схему</h2>
+    <div class="warn">
+      <p>1) Проводка уже сделана или ещё на стадии проекта? 2) Ввод: одна фаза или три, сколько кВт? 3) Котёл газовый или электрический? 4) В бане электрокаменка или дровяная печь? 5) Где будут стиральная машина и водонагреватель (если есть)? 6) Какой экосистемой уже пользуетесь — Алиса, Apple, Google или пока ничем?</p>
+    </div>
+  </section>
+
+  <footer>Это концепция для обсуждения с электриком, а не исполнительная схема. Работы в щите — только с отключённым вводом и силами допущенного специалиста.</footer>
+</main>
+
+<script>
+/* Группы щита. kind: light | socket | power | keep. Состояния в сценариях: on | off | auto; если не указано — on. */
+var G = [
+  { id: 'Н1', kind: 'keep', n: 'Котельная: котёл, насосы', p: 'C16 + УЗО 30 мА', c: '3×2,5', ctl: 'Не отключается' },
+  { id: 'Н2', kind: 'keep', n: 'Холодильник', p: 'C16 + УЗО 30 мА', c: '3×2,5', ctl: 'Не отключается' },
+  { id: 'Н3', kind: 'keep', n: 'Связь и охрана: роутер, хаб, камеры', p: 'C10, через ИБП', c: '3×1,5', ctl: 'Не отключается' },
+  { id: 'Н4', kind: 'keep', n: 'Ворота гаража, калитка, домофон', p: 'C10 + УЗО 30 мА', c: '3×1,5', ctl: 'Не отключается' },
+
+  { id: 'С1', kind: 'light', n: 'Свет: кухня-гостиная', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'С2', kind: 'light', n: 'Свет: холл, лестница, коридор 2 эт.', p: 'C10', c: '3×1,5', ctl: 'Реле; ночник с датчиком движения', away: 'off', night: 'auto' },
+  { id: 'С3', kind: 'light', n: 'Свет: ванная и туалет 2 эт.', p: 'C10 + УЗО 10 мА', c: '3×1,5', ctl: 'Реле', away: 'off', night: 'auto' },
+  { id: 'С4', kind: 'light', n: 'Свет: кабинет', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'С5', kind: 'light', n: 'Свет: большая спальня', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off' },
+  { id: 'С6', kind: 'light', n: 'Свет: детская', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off' },
+  { id: 'С7', kind: 'light', n: 'Свет: средняя спальня и гардеробная', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off' },
+  { id: 'С8', kind: 'light', n: 'Свет: фасад, вход, калитка, участок', p: 'C10 + УЗО 30 мА', c: '3×1,5', ctl: 'Реле; по закату и датчику движения', away: 'auto', night: 'auto', vacation: 'auto' },
+  { id: 'С9', kind: 'light', n: 'Свет: гараж', p: 'C10', c: '3×1,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'С10', kind: 'light', n: 'Свет: пристрой и терраса', p: 'C10 + УЗО 30 мА', c: '3×1,5', ctl: 'Реле', away: 'off', night: 'off' },
+
+  { id: 'Р1', kind: 'socket', n: 'Розетки: кухня, рабочая зона', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'Р2', kind: 'socket', n: 'Розетки: гостиная, ТВ-зона', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'Р3', kind: 'socket', n: 'Розетки: кабинет (компьютер)', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле; предупреждение, если ПК включён', away: 'off', night: 'auto' },
+  { id: 'Р4', kind: 'socket', n: 'Розетки: ванная (фен, бритва)', p: 'Дифавтомат C16 10 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'Р5', kind: 'socket', n: 'Розетки: большая спальня', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off' },
+  { id: 'Р6', kind: 'socket', n: 'Розетки: детская', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле; ночью выключены', away: 'off', night: 'off' },
+  { id: 'Р7', kind: 'socket', n: 'Розетки: средняя спальня и гардеробная', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off' },
+  { id: 'Р8', kind: 'socket', n: 'Розетки: улица и терраса 2 эт.', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'Р9', kind: 'socket', n: 'Розетки: гараж', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+  { id: 'Р10', kind: 'socket', n: 'Розетки: летняя кухня в пристрое', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле', away: 'off', night: 'off' },
+
+  { id: 'М1', kind: 'power', n: 'Варочная панель', p: 'C32 (или 3ф C16) + УЗО', c: '3×6 / 5×2,5', ctl: 'Контактор', cont: true, away: 'off', night: 'off' },
+  { id: 'М2', kind: 'power', n: 'Духовой шкаф', p: 'C16 + УЗО 30 мА', c: '3×2,5', ctl: 'Контактор', cont: true, away: 'off', night: 'off' },
+  { id: 'М3', kind: 'power', n: 'Посудомоечная машина', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле с замером: выкл. после цикла', away: 'auto' },
+  { id: 'М4', kind: 'power', n: 'Стиральная машина', p: 'Дифавтомат C16 30 мА', c: '3×2,5', ctl: 'Реле с замером: выкл. после цикла', away: 'auto' },
+  { id: 'М5', kind: 'power', n: 'Баня: отдельный щиток', p: 'По мощности печи', c: 'Отдельная линия', ctl: 'Контактор; прогрев по расписанию', cont: true, away: 'off', night: 'off' }
+];
+/* «Отпуск» = «Уходя», но свет в гостиной и спальне вечером включается по случайному расписанию */
+G.forEach(function(g){ if (!g.vacation) g.vacation = (g.id === 'С1' || g.id === 'С5') ? 'auto' : g.away; });
+
+var SCEN = {
+  home: 'Всё под напряжением, свет работает от обычных выключателей.',
+  night: 'Гаснут общие зоны, кухня, гараж, улица и розетки детской. Спальни не трогаем, в холле и ванной — ночник по датчику движения.',
+  away: 'Выключается всё, кроме котла, холодильника, связи и ворот. Стиральная и посудомоечная машины доработают цикл и отключатся сами.',
+  vacation: 'Как «Уходя», плюс имитация присутствия: вечером на 1–3 часа загорается свет в гостиной и спальне в случайное время.'
+};
+
+/* Комнаты из 3D-модели (м): x — вдоль фасада, z — в глубину. Масштаб плана 40 px/м. */
+var S = 40;
+var ROOMS = {
+  f1: [
+    { n: 'Кухня-гостиная', x0: 0, x1: 3.6, z0: 0, z1: 6.7, g: ['С1', 'Р1', 'Р2', 'М1', 'М2', 'М3', 'Н2'] },
+    { n: 'Холл', x0: 3.98, x1: 5.78, z0: 0, z1: 4.4, g: ['С2'] },
+    { n: 'Котельная', sub: 'под лестницей', x0: 3.98, x1: 5.78, z0: 4.5, z1: 6.7, g: ['Н1', 'Н3'] },
+    { n: 'Ванная', x0: 5.9, x1: 8.61, z0: 0, z1: 2.75, g: ['С3', 'Р4', 'М4'] },
+    { n: 'Кабинет', x0: 5.9, x1: 8.61, z0: 2.87, z1: 6.7, g: ['С4', 'Р3'] }
+  ],
+  f2: [
+    { n: 'Детская', x0: 0, x1: 3.86, z0: 0, z1: 2.7, g: ['С6', 'Р6'] },
+    { n: 'Большая спальня', x0: 0, x1: 3.86, z0: 2.82, z1: 6.7, g: ['С5', 'Р5'] },
+    { n: 'Туалет', x0: 3.98, x1: 5.78, z0: 0, z1: 1.5, g: ['С3'] },
+    { n: 'Коридор', sub: 'и лестница', x0: 3.98, x1: 5.78, z0: 1.62, z1: 6.7, g: ['С2'] },
+    { n: 'Гардеробная', x0: 5.9, x1: 8.61, z0: 0, z1: 2.68, g: ['С7', 'Р7'] },
+    { n: 'Средняя', sub: 'спальня', x0: 5.9, x1: 8.61, z0: 2.8, z1: 6.7, g: ['С7', 'Р7'] }
+  ]
+};
+var OUTS = [
+  { n: 'Участок, фасад, калитка', g: ['С8', 'Р8'] },
+  { n: 'Гараж на две машины', g: ['С9', 'Р9', 'Н4'] },
+  { n: 'Пристрой: летняя кухня и терраса', g: ['С10', 'Р10'] },
+  { n: 'Баня', g: ['М5'] }
+];
+
+var byId = {}; G.forEach(function(g){ byId[g.id] = g; });
+function st(g, s){ return g.kind === 'keep' ? 'keep' : (s === 'home' ? 'on' : (g[s] || 'on')); }
+var LBL = { on: 'вкл', off: 'выкл', auto: 'авто', keep: 'всегда' };
+var NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){ var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+
+/* план: комната + «таблетки» групп внутри неё */
+var pills = [];
+['f1', 'f2'].forEach(function(f){
+  var svg = document.getElementById(f);
+  ROOMS[f].forEach(function(r){
+    var gEl = el('g', { 'class': 'room' }, svg);
+    var x = r.x0 * S, y = r.z0 * S, w = (r.x1 - r.x0) * S, h = (r.z1 - r.z0) * S;
+    el('rect', { x: x, y: y, width: w, height: h }, gEl);
+    var t = el('text', { x: x + 8, y: y + 18 }, gEl); t.textContent = r.n;
+    var ty = y + 18;
+    if (r.sub) { ty += 13; var s = el('text', { x: x + 8, y: ty, 'class': 'sub' }, gEl); s.textContent = r.sub; }
+    var px = x + 8, py = ty + 10, pw = 42, ph = 18;
+    r.g.forEach(function(id){
+      if (px + pw > x + w - 4) { px = x + 8; py += ph + 4; }
+      var p = el('g', { 'class': 'pill' }, gEl);
+      var rc = el('rect', { x: px, y: py, width: pw, height: ph, rx: 5 }, p);
+      var tx = el('text', { x: px + pw / 2, y: py + 12.5, 'text-anchor': 'middle' }, p); tx.textContent = id;
+      var ti = el('title', {}, p); ti.textContent = byId[id].n;
+      pills.push({ id: id, rect: rc, text: tx, room: gEl, r: r });
+      px += pw + 4;
+    });
+  });
+});
+var outs = document.getElementById('outs');
+OUTS.forEach(function(o){
+  var d = document.createElement('div'); d.className = 'out';
+  d.innerHTML = '<b>' + o.n + '</b><div class="chips"></div>';
+  o.el = d; o.chips = d.querySelector('.chips'); outs.appendChild(d);
+});
+
+/* таблица */
+var tb = document.getElementById('tbody');
+var SEC = { keep: 'Не отключаются никогда', light: 'Освещение', socket: 'Розетки', power: 'Мощные потребители' };
+var last = '';
+G.forEach(function(g){
+  if (g.kind !== last) { last = g.kind; tb.insertAdjacentHTML('beforeend', '<tr class="sec"><td colspan="7">' + SEC[g.kind] + '</td></tr>'); }
+  var a = st(g, 'away'), n = st(g, 'night');
+  tb.insertAdjacentHTML('beforeend', '<tr><td class="id">' + g.id + '</td><td>' + g.n + '</td><td class="m">' + g.p + '</td><td class="m">' + g.c + '</td><td class="m">' + g.ctl +
+    '</td><td><span class="chip s-' + a + '">' + LBL[a] + '</span></td><td><span class="chip s-' + n + '">' + LBL[n] + '</span></td></tr>');
+});
+document.getElementById('nCtl').textContent = G.filter(function(g){ return g.kind !== 'keep'; }).length;
+document.getElementById('nCont').textContent = G.filter(function(g){ return g.cont; }).length;
+document.getElementById('nKeep').textContent = G.filter(function(g){ return g.kind === 'keep'; }).length;
+
+function apply(s){
+  document.querySelectorAll('.scen button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.s === s)); });
+  document.getElementById('scenText').textContent = SCEN[s];
+  var live = new Map();
+  pills.forEach(function(p){
+    var v = st(byId[p.id], s);
+    p.rect.style.fill = 'var(--' + v + '-bg)'; p.text.style.fill = 'var(--' + v + ')';
+    p.rect.parentNode.querySelector('title').textContent = byId[p.id].n + ' — ' + LBL[v];
+    live.set(p.room, (live.get(p.room) || false) || v !== 'off');
+  });
+  live.forEach(function(on, room){ room.classList.toggle('dim', !on); });
+  OUTS.forEach(function(o){
+    var any = false;
+    o.chips.innerHTML = o.g.map(function(id){ var v = st(byId[id], s); if (v !== 'off') any = true; return '<span class="chip s-' + v + '" title="' + byId[id].n + '">' + id + ' · ' + LBL[v] + '</span>'; }).join('');
+    o.el.classList.toggle('dim', !any);
+  });
+}
+document.querySelectorAll('.scen button').forEach(function(b){ b.onclick = function(){ apply(b.dataset.s); }; });
+apply('home');
+</script>
+</body>
+</html>
