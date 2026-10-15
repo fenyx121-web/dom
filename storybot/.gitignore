@@ -5,3 +5,5 @@ state/
 music/
 config.json
 __pycache__/
+.env
+data/

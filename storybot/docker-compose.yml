@@ -1,0 +1,29 @@
+services:
+  # Local Telegram Bot API server: lets the bot receive videos up to 2 GB (cloud limit is 20 MB).
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    restart: unless-stopped
+    environment:
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_LOCAL: "1"
+    volumes:
+      - tg-files:/var/lib/telegram-bot-api
+
+  storybot:
+    build: .
+    restart: unless-stopped
+    depends_on: [telegram-bot-api]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_API_URL: http://telegram-bot-api:8081
+      ADMIN_IDS: ${ADMIN_IDS:-}
+      JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+    volumes:
+      - tg-files:/var/lib/telegram-bot-api:ro   # downloaded videos, same path as in the API server
+      - ./data:/work/data
+      - ./music:/work/music
+      - ./cache:/work/cache
+
+volumes:
+  tg-files:

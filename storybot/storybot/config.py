@@ -39,6 +39,13 @@ class Config:
     preset: str = "medium"
     crf: int = 20
     video_exts: tuple = (".mp4", ".mov", ".m4v")
+    # telegram bot
+    telegram_token: str = ""
+    telegram_api_url: str = ""       # local Bot API server, e.g. http://localhost:8081 (lifts 20 MB limit)
+    admin_ids: tuple = ()            # Telegram user ids allowed to manage users
+    data_dir: str = "data"           # users, settings, job files
+    tg_batch_quiet_sec: int = 15     # wait this long for more videos before editing
+    keep_hours: int = 24             # delete job files after this long
 
 
 def load_config(path: str | None = None) -> Config:
@@ -51,8 +58,12 @@ def load_config(path: str | None = None) -> Config:
         if unknown:
             raise SystemExit(f"config: unknown keys {sorted(unknown)}")
         for k, v in data.items():
-            setattr(cfg, k, tuple(v) if k == "video_exts" else v)
-    env = os.environ.get("JAMENDO_CLIENT_ID")
-    if env:
-        cfg.jamendo_client_id = env
+            setattr(cfg, k, tuple(v) if k in ("video_exts", "admin_ids") else v)
+    for name, key in (("JAMENDO_CLIENT_ID", "jamendo_client_id"),
+                      ("TELEGRAM_BOT_TOKEN", "telegram_token"),
+                      ("TELEGRAM_API_URL", "telegram_api_url")):
+        if os.environ.get(name):
+            setattr(cfg, key, os.environ[name])
+    if os.environ.get("ADMIN_IDS"):
+        cfg.admin_ids = tuple(int(x) for x in os.environ["ADMIN_IDS"].replace(",", " ").split())
     return cfg
