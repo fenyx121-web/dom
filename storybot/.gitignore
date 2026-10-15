@@ -1,0 +1,7 @@
+inbox/
+out/
+cache/
+state/
+music/
+config.json
+__pycache__/

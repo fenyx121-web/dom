@@ -1,0 +1,11 @@
+{
+  "inbox": "inbox",
+  "out": "out",
+  "music_source": "auto",
+  "jamendo_client_id": "",
+  "music_tags": "energetic+upbeat",
+  "story_min": 15,
+  "story_target": 30,
+  "story_max": 60,
+  "fit": "crop"
+}
