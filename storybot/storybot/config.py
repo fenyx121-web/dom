@@ -48,7 +48,22 @@ class Config:
     keep_hours: int = 24             # delete job files after this long
 
 
+def _load_dotenv(path: Path = Path(".env")) -> None:
+    """KEY=VALUE lines from ./.env; real environment variables win."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        v = v.strip().strip('"').strip("'")
+        if v:
+            os.environ.setdefault(k.strip(), v)
+
+
 def load_config(path: str | None = None) -> Config:
+    _load_dotenv()
     cfg = Config()
     p = Path(path) if path else Path("config.json")
     if p.exists():
